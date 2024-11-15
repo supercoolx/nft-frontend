@@ -16,7 +16,7 @@ import Linkedin from "../svg/linkedin.svg?react"
 import Whatsapp from "../svg/whatsapp.svg?react"
 import X from "../svg/x.svg?react"
 import Check from "../svg/check.svg?react"
-import { shortAddress } from "../utils"
+import { shortAddress, isValidAddress } from "../utils"
 
 const Home = () => {
   const [address, setAddress] = useState('');
@@ -26,6 +26,7 @@ const Home = () => {
   const [showHelpButton, setShowHelpButton] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState('');
 
   const timerId = useRef<NodeJS.Timeout | null>(null);
 
@@ -39,9 +40,13 @@ const Home = () => {
     if (addr) {
       setLoading(true);
       setAddress(addr);
-      Promise.all([fetchFollows(addr), fetchProfile(addr)]).finally(() => {
-        setLoading(false);
-      });
+      Promise.all([fetchFollows(addr), fetchProfile(addr)])
+        .catch(() => {
+          setUser(null);
+          setError('ENS name not valid or does not exist.');
+        }).finally(() => {
+          setLoading(false);
+        });
     }
 
     if (!cardRef.current) return;
@@ -111,11 +116,17 @@ const Home = () => {
 
   const handleForm = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (loading || address.trim().length === 0) return;
+    if (loading) return;
+    if (!isValidAddress(address)) return setError('Please input valid address or ENS.');
     setLoading(true);
-    Promise.all([fetchFollows(address), fetchProfile(address)]).finally(() => {
-      setLoading(false);
-    });
+    Promise.all([fetchFollows(address), fetchProfile(address)])
+      .catch(() => {
+        setSearchParams({ address });
+        setUser(null);
+        setError('ENS name not valid or does not exist.');
+      }).finally(() => {
+        setLoading(false);
+      });
   }
 
   const handleCopyAddress = () => {
@@ -139,19 +150,19 @@ const Home = () => {
 
   const fetchFollows = (addr: string) => axios.get(`https://api.ethfollow.xyz/api/v1/users/${addr}/stats`)
     .then(res => {
-      setSearchParams({ address: addr });
       setFollower(res.data.followers_count);
       setFollowing(res.data.following_count);
-    }).catch(console.error);
+    });
 
   const fetchProfile = (addr: string) => axios.get(`https://api.web3.bio/profile/ens/${addr}`)
     .then(res => {
       setUser(res.data);
       setShowHelpButton(true);
-    }).catch(console.error);
+    });
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
+    setError('');
     setShowHelpButton(false);
     setAddress(e.target.value);
   }
@@ -163,9 +174,9 @@ const Home = () => {
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="w-full flex gap-2 sm:w-[282px] px-4 py-2 border-[3px] rounded-[8px] border-[#041318] shadow-[0_0_64px_32px_#4493f030]">
               <div className="flex-1">
-              <input value={address} onChange={handleChangeAddress} className="bg-black autofill:bg-black w-full outline-none text-white" name="address" placeholder="ENS or wallet address" autoComplete="off" />
+                <input value={address} onChange={handleChangeAddress} className="bg-black autofill:bg-black w-full outline-none text-white" name="address" placeholder="ENS or wallet address" autoComplete="off" />
               </div>
-              { loading && <img src="/imgs/loading.gif" width={20} height={20} alt="" className="" /> }
+              {loading && <img src="/imgs/loading.gif" width={20} height={20} alt="" className="" />}
             </div>
             <button className="px-6 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 text-white bg-[#44bcf00b] hover:bg-[#7298f897] transition-colors duration-300">
               <Search width={16} height={16} />
@@ -173,10 +184,11 @@ const Home = () => {
             </button>
           </div>
         </form>
-        { showHelpButton && <a href="https://github.com/yougogirldoteth/ens-vibe-card" target="_blank" className="px-6 w-full py-3 rounded-[8px] flex items-center justify-center leading-none gap-4 text-white bg-[#44bcf00b] hover:bg-[#7298f897] transition-colors duration-300">
+        {showHelpButton && <a href="https://github.com/yougogirldoteth/ens-vibe-card" target="_blank" className="px-6 w-full py-3 rounded-[8px] flex items-center justify-center leading-none gap-4 text-white bg-[#44bcf00b] hover:bg-[#7298f897] transition-colors duration-300">
           <span className="flex-1 text-center">How to deploy your own ENS vibe card</span>
           <Github width={16} height={16} />
-        </a> }
+        </a>}
+        {error && <div className="text-center text-red-500">{error}</div>}
       </div>
       <div ref={cardRef} className="card">
         <div className="relative">
@@ -186,65 +198,65 @@ const Home = () => {
         <div className="bg-black py-10 px-5 rounded-b-[8px]">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="">
-              <div onClick={handleCopyAddress} className="relative z-20 cursor-pointer text-[20px] text-primary font-bold italic uppercase">{ !loading && user ? user.identity : 'UNKNOWN' }</div>
-              <div ref={addressRef} className="text-secondary font-semibold italic text-[12px] -mt-1 uppercase">{ !loading && user ? shortAddress(user.address) : '' }</div>
+              <div onClick={handleCopyAddress} className="relative z-20 cursor-pointer text-[20px] text-primary font-bold italic uppercase">{!loading && user ? user.identity : 'UNKNOWN'}</div>
+              <div ref={addressRef} className="text-secondary font-semibold italic text-[12px] -mt-1 uppercase">{!loading && user ? shortAddress(user.address) : ''}</div>
             </div>
-            { !loading && <a href={"https://ethfollow.xyz/" + user?.identity} target="_blank" className="relative z-20 flex justify-center items-center gap-4 border border-secondary/20 rounded-[4px] px-4 py-1 bg-transparent hover:bg-[#44bcf030] transition-colors duration-300">
+            {!loading && <a href={"https://ethfollow.xyz/" + user?.identity} target="_blank" className="relative z-20 flex justify-center items-center gap-4 border border-secondary/20 rounded-[4px] px-4 py-1 bg-transparent hover:bg-[#44bcf030] transition-colors duration-300">
               <Ethereum color="white" width={16} height={16} />
               <div className="font-bold italic text-primary">{follower}<small className="text-secondary"> FOLOWERS</small></div>
               <div className="font-bold italic text-primary">{following}<small className="text-secondary"> FOLLOWING</small></div>
-            </a> }
+            </a>}
           </div>
           <div className="">
-            <div className="text-white/80 font-medium mt-3">{ !loading && user?.description ? user.description : '' }</div>
-            { !loading && <div className="flex flex-wrap gap-4 mt-4 uppercase">
-              { user?.links?.website && <a href={ user.links.website.link } target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
+            <div className="text-white/80 font-medium mt-3">{!loading && user?.description ? user.description : ''}</div>
+            {!loading && <div className="flex flex-wrap gap-4 mt-4 uppercase">
+              {user?.links?.website && <a href={user.links.website.link} target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
                 <Website width={16} height={16} color="white" />
-                <span className="text-white italic font-bold text-[12px]">{ user.links.website.handle }</span>
-              </a> }
-              { user?.links?.twitter && <a href={ user.links.twitter.link } target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
+                <span className="text-white italic font-bold text-[12px]">{user.links.website.handle}</span>
+              </a>}
+              {user?.links?.twitter && <a href={user.links.twitter.link} target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
                 <Twitter width={16} height={16} color="white" />
-                <span className="text-white italic font-bold text-[12px]">{ user.links.twitter.handle }</span>
-              </a> }
-              { user?.links?.github && <a href={ user.links.github.link } target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
+                <span className="text-white italic font-bold text-[12px]">{user.links.twitter.handle}</span>
+              </a>}
+              {user?.links?.github && <a href={user.links.github.link} target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
                 <Github width={16} height={16} color="white" />
-                <span className="text-white italic font-bold text-[12px]">{ user.links.github.handle }</span>
-              </a> }
-              { user?.links?.discord && <a href={ user.links.discord.link } target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
+                <span className="text-white italic font-bold text-[12px]">{user.links.github.handle}</span>
+              </a>}
+              {user?.links?.discord && <a href={user.links.discord.link} target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
                 <Discord width={16} height={16} color="white" />
-                <span className="text-white italic font-bold text-[12px]">{ user.links.discord.handle }</span>
-              </a> }
-              { user?.links?.telegram && <a href={ user.links.telegram.link } target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
+                <span className="text-white italic font-bold text-[12px]">{user.links.discord.handle}</span>
+              </a>}
+              {user?.links?.telegram && <a href={user.links.telegram.link} target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
                 <Telegram width={16} height={16} color="white" />
-                <span className="text-white italic font-bold text-[12px]">{ user.links.telegram.handle }</span>
-              </a> }
+                <span className="text-white italic font-bold text-[12px]">{user.links.telegram.handle}</span>
+              </a>}
             </div>}
           </div>
         </div>
       </div>
-      { user && <div className="fixed bottom-0 py-10 flex justify-center text-white gap-2">
+      {user && <div className="fixed bottom-0 py-10 flex justify-center text-white gap-2">
         <button onClick={handleCopyLink} className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
-          { copied ? <Check width={20} height={20} /> : <Link width={20} height={20} className="-rotate-45" /> }
+          {copied ? <Check width={20} height={20} /> : <Link width={20} height={20} className="-rotate-45" />}
         </button>
-        <a href={`https://x.com/intent/tweet?text=${ encodeURIComponent(user.identity + ' ' + location.href) }`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
+        <a href={`https://x.com/intent/tweet?text=${encodeURIComponent(user.identity + ' ' + location.href)}`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           <X width={20} height={20} />
         </a>
-        <a href={`https://www.facebook.com/sharer.php?u=${ encodeURIComponent(location.href) }`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
+        <a href={`https://www.facebook.com/sharer.php?u=${encodeURIComponent(location.href)}`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           <Facebook width={20} height={20} />
         </a>
-        <a href={`https://wa.me/?text=${ encodeURIComponent(user.identity + ' ' + location.href) }`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
+        <a href={`https://wa.me/?text=${encodeURIComponent(user.identity + ' ' + location.href)}`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           <Whatsapp width={20} height={20} />
         </a>
-        <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${ encodeURIComponent(location.href) }`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
+        <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(location.href)}`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           <Linkedin width={20} height={20} />
         </a>
-        <a href={`mailto:?subject=${ encodeURIComponent(user.identity) }&body=${ encodeURIComponent(user.description + '\n' + location.href) }`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
+        <a href={`mailto:?subject=${encodeURIComponent(user.identity)}&body=${encodeURIComponent(user.description + '\n' + location.href)}`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           <Email width={20} height={20} />
         </a>
         <a href={`https://t.me/share/url?url=${encodeURIComponent(location.href)}&text=${encodeURIComponent(user.identity)}`} target="_blank" className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           <Telegram width={20} height={20} />
         </a>
-      </div> }
+      </div>}
       <style ref={styleRef}></style>
     </div>
   )
