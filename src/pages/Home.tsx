@@ -168,13 +168,13 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen pt-5 pb-20 flex flex-col items-center justify-center px-4">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 pt-5 pb-20">
       <div className="space-y-2">
         <form onSubmit={handleForm}>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <div className="w-full flex gap-2 sm:w-[282px] px-4 py-2 border-[3px] rounded-[8px] border-[#041318] shadow-[0_0_64px_32px_#4493f030]">
               <div className="flex-1">
-                <input value={address} onChange={handleChangeAddress} className="bg-black autofill:bg-black w-full outline-none text-white" name="address" placeholder="ENS or wallet address" autoComplete="off" />
+                <input value={address} onChange={handleChangeAddress} className="w-full text-white bg-black outline-none autofill:bg-black" name="address" placeholder="ENS or wallet address" autoComplete="off" />
               </div>
               {loading && <img src="/imgs/loading.gif" width={20} height={20} alt="" className="" />}
             </div>
@@ -196,19 +196,19 @@ const Home = () => {
           <img src={!loading && user?.avatar ? user.avatar : "/imgs/default-avatar.svg"} alt="" className="w-auto sm:w-40 h-[80%] sm:h-40 rounded-full absolute left-1/2 sm:left-[5%] -translate-x-1/2 sm:translate-x-0 bottom-0 translate-y-[20%]" />
         </div>
         <div className="bg-black py-10 px-5 rounded-b-[8px]">
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-            <div className="">
-              <div onClick={handleCopyAddress} className="relative z-20 cursor-pointer text-[20px] text-primary font-bold italic uppercase">{!loading && user ? user.identity : 'UNKNOWN'}</div>
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex flex-col items-center sm:items-start">
+              <div onClick={handleCopyAddress} className="relative z-20 cursor-pointer text-center sm:text-left text-[20px] text-primary font-bold italic uppercase ">{!loading && user ? (user.identity === user.address ? shortAddress(user.identity) : user.identity) : 'UNKNOWN'}</div>
               <div ref={addressRef} className="text-secondary font-semibold italic text-[12px] -mt-1 uppercase">{!loading && user ? shortAddress(user.address) : ''}</div>
             </div>
             {!loading && <a href={"https://ethfollow.xyz/" + user?.identity} target="_blank" className="relative z-20 flex justify-center items-center gap-4 border border-secondary/20 rounded-[4px] px-4 py-1 bg-transparent hover:bg-[#44bcf030] transition-colors duration-300">
               <Ethereum color="white" width={16} height={16} />
-              <div className="font-bold italic text-primary">{follower}<small className="text-secondary"> FOLOWERS</small></div>
-              <div className="font-bold italic text-primary">{following}<small className="text-secondary"> FOLLOWING</small></div>
+              <div className="italic font-bold text-primary">{follower}<small className="text-secondary"> FOLOWERS</small></div>
+              <div className="italic font-bold text-primary">{following}<small className="text-secondary"> FOLLOWING</small></div>
             </a>}
           </div>
           <div className="">
-            <div className="text-white/80 font-medium mt-3">{!loading && user?.description ? user.description : ''}</div>
+            <div className="mt-3 font-medium text-white/80">{!loading && user?.description ? user.description : ''}</div>
             {!loading && <div className="flex flex-wrap gap-4 mt-4 uppercase">
               {user?.links?.website && <a href={user.links.website.link} target="_blank" className="relative z-20 px-4 py-2 rounded-[8px] flex items-center justify-center leading-none gap-4 bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300">
                 <Website width={16} height={16} color="white" />
@@ -234,7 +234,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {user && <div className="fixed bottom-0 py-10 flex justify-center text-white gap-2">
+      {user && <div className="fixed bottom-0 flex justify-center gap-2 py-10 text-white">
         <button onClick={handleCopyLink} className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           {copied ? <Check width={20} height={20} /> : <Link width={20} height={20} className="-rotate-45" />}
         </button>
