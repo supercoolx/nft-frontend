@@ -4,8 +4,202 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color1: rgb(0, 231, 255);
+  --color2: rgb(255, 0, 231);
+}
+
 body {
   background-color: black;
   font-family: 'Space Mono';
   font-size: 16px;
+  user-select: none;
+}
+
+.img {
+  -webkit-user-drag: none;
+}
+
+.card {
+  @apply relative max-w-[640px] w-full mt-20 border-[3px] border-[#041318] rounded-[8px] origin-center;
+  box-shadow: 
+    -5px -5px 5px -5px var(--color1), 
+    5px 5px 5px -5px var(--color2), 
+    -7px -7px 10px -5px transparent, 
+    7px 7px 10px -5px transparent, 
+    0 0 5px 0px rgba(255,255,255,0),
+    0 55px 35px -20px rgba(0, 0, 0, 0.5);
+  transition: transform 0.5s ease, box-shadow 2s ease;
+}
+
+.card:hover {
+  box-shadow: 
+    -40px -40px 60px -50px var(--color1), 
+    40px 40px 60px -50px var(--color2), 
+    -15px -15px 20px -10px var(--color1), 
+    15px 15px 20px -10px var(--color2), 
+    0 0 13px 4px rgba(255,255,255,0.3),
+    0 55px 35px -20px rgba(0, 0, 0, 0.5);
+}
+
+.card:before,
+.card:after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  background-repeat: no-repeat;
+  opacity: .5;
+  mix-blend-mode: color-dodge;
+  transition: all .33s ease;
+}
+
+.card:before {
+  background-position: 50% 50%;
+  background-size: 300% 300%;
+  background-image: linear-gradient(
+    115deg,
+    transparent 0%,
+    var(--color1) 25%,
+    transparent 47%,
+    transparent 53%,
+    var(--color2) 75%,
+    transparent 100%
+  );
+  opacity: .5;
+  filter: brightness(.5) contrast(1);
+  z-index: 1;
+}
+
+.card:after {
+  opacity: 1;
+  background-image: url("/imgs/sparkles.gif"), 
+    url('/imgs/holo.png'), 
+    linear-gradient(125deg, #ff008450 15%, #fca40040 30%, #ffff0030 40%, #00ff8a20 60%, #00cfff40 70%, #cc4cfa50 85%);
+  background-position: 50% 50%;
+  background-size: 160%;
+  background-blend-mode: overlay;
+  z-index: 2;
+  filter: brightness(1) contrast(1);
+  transition: all .33s ease;
+  mix-blend-mode: color-dodge;
+  opacity: .75;
+}
+
+.card.active:after,
+.card:hover:after {
+  filter: brightness(1) contrast(1);;
+  opacity: 1;
+}
+
+.card.active,
+.card:hover {
+  animation: none;
+  transition: box-shadow 2s ease-out;
+}
+
+.card.active:before,
+.card:hover:before {
+  animation: none;
+  background-image: linear-gradient(
+    110deg,
+    transparent 25%,
+    var(--color1) 43%,
+    var(--color2) 57%,
+    transparent 75%
+  );
+  background-position: 50% 50%;
+  background-size: 250% 250%;
+  opacity: .88;
+  filter: brightness(.66) contrast(1.33);
+  transition: none;
+}
+
+.card.active:before,
+.card:hover:before,
+.card.active:after,
+.card:hover:after {
+  animation: none;
+  transition: none;
+}
+
+.card.animated {
+  transition: none;
+  animation: holoCard 12s ease 0s 1;
+  &:before { 
+    transition: none;
+    animation: holoGradient 12s ease 0s 1;
+  }
+  &:after {
+    transition: none;
+    animation: holoSparkle 12s ease 0s 1;
+  }
+}
+
+
+
+
+@keyframes holoSparkle {
+  0%, 100% {
+    opacity: .75; background-position: 50% 50%; filter: brightness(1.2) contrast(1.25);
+  }
+  5%, 8% {
+    opacity: 1; background-position: 40% 40%; filter: brightness(.8) contrast(1.2);
+  }
+  13%, 16% {
+    opacity: .5; background-position: 50% 50%; filter: brightness(1.2) contrast(.8);
+  }
+  35%, 38% {
+    opacity: 1; background-position: 60% 60%; filter: brightness(1) contrast(1);
+  }
+  55% {
+    opacity: .33; background-position: 45% 45%; filter: brightness(1.2) contrast(1.25);
+  }
+}
+
+@keyframes holoGradient {
+  0%, 100% {
+    opacity: 0.5;
+    background-position: 50% 50%;
+    filter: brightness(.5) contrast(1);
+  }
+  5%, 9% {
+    background-position: 100% 100%;
+    opacity: 1;
+    filter: brightness(.75) contrast(1.25);
+  }
+  13%, 17% {
+    background-position: 0% 0%;
+    opacity: .88;
+  }
+  35%, 39% {
+    background-position: 100% 100%;
+    opacity: 1;
+    filter: brightness(.5) contrast(1);
+  }
+  55% {
+    background-position: 0% 0%;
+    opacity: 1;
+    filter: brightness(.75) contrast(1.25);
+  }
+}
+
+@keyframes holoCard {
+  0%, 100% {
+    transform: rotateZ(0deg) rotateX(0deg) rotateY(0deg);
+  }
+  5%, 8% {
+    transform: rotateZ(0deg) rotateX(6deg) rotateY(-10deg);
+  }
+  13%, 16% {
+    transform: rotateZ(0deg) rotateX(-9deg) rotateY(20deg);
+  }
+  35%, 38% {
+    transform: rotateZ(3deg) rotateX(12deg) rotateY(10deg);
+  }
+  55% {
+    transform: rotateZ(-3deg) rotateX(-12deg) rotateY(-20deg);
+  }
 }
