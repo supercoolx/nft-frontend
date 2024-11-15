@@ -16,13 +16,14 @@ import Linkedin from "../svg/linkedin.svg?react"
 import Whatsapp from "../svg/whatsapp.svg?react"
 import X from "../svg/x.svg?react"
 import Check from "../svg/check.svg?react"
-import { shortAddress, isValidAddress } from "../utils"
+import { shortAddress, isValidAddress, toBMK } from "../utils"
 
 const Home = () => {
   const [address, setAddress] = useState('');
   const [follower, setFollower] = useState('');
   const [following, setFollowing] = useState('');
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [pnl, setPNL] = useState<TradeSummary | null>(null);
   const [showHelpButton, setShowHelpButton] = useState(false);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -158,6 +159,12 @@ const Home = () => {
     .then(res => {
       setUser(res.data);
       setShowHelpButton(true);
+      return res.data.address;
+    }).then(fetchPNL);
+
+  const fetchPNL = (addr: string) => axios.get(`https://deep-index.moralis.io/api/v2.2/wallets/${addr}/profitability/summary?chain=eth&days=30`, { headers: { 'X-API-KEY': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjM0MzM5NGI2LWVlMjAtNDc3ZS04MGQyLWI0M2VlNTdlMDQ2OSIsIm9yZ0lkIjoiMjAxNDkzIiwidXNlcklkIjoiMjAxMTY3IiwidHlwZUlkIjoiNjQ0MGRiYTktNmIyMi00NmUzLTlmZWItNDY4NDQ3ZWNlYzQ2IiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE3Mjk1MjU4OTcsImV4cCI6NDg4NTI4NTg5N30.jBZXGJbyrWTNI7vfVg3GbREuhHmZ8p1Gf2MQVZK2a3Q' } })
+    .then(res => {
+      setPNL(res.data);
     });
 
   const handleChangeAddress = (e: ChangeEvent<HTMLInputElement>) => {
@@ -194,6 +201,7 @@ const Home = () => {
         <div className="relative">
           <img src={!loading && user?.header ? user.header : "/imgs/default-header.svg"} alt="" className="w-full rounded-t-[8px]" />
           <img src={!loading && user?.avatar ? user.avatar : "/imgs/default-avatar.svg"} alt="" className="w-auto sm:w-40 h-[80%] sm:h-40 rounded-full absolute left-1/2 sm:left-[5%] -translate-x-1/2 sm:translate-x-0 bottom-0 translate-y-[20%]" />
+          { pnl && <div className="absolute text-white right-2 top-2">PNL(30d): { toBMK(pnl.total_realized_profit_usd) }</div> }
         </div>
         <div className="bg-black py-10 px-5 rounded-b-[8px]">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
@@ -234,7 +242,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {user && <div className="fixed bottom-0 flex justify-center gap-2 py-10 text-white">
+      {user && <div className="flex justify-center gap-2 py-10 text-white">
         <button onClick={handleCopyLink} className="w-8 h-8 border border-white/20 rounded-full bg-[#44bcf015] hover:bg-[#7298f897] transition-colors duration-300 flex items-center justify-center">
           {copied ? <Check width={20} height={20} /> : <Link width={20} height={20} className="-rotate-45" />}
         </button>
